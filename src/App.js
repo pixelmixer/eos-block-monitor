@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import './App.scss'
+import './App.css'
 
 import OMDB from './services/OMDB'
 import queryString from 'query-string'
@@ -17,6 +17,8 @@ import {
   NavItem,
   Input,
   FormGroup,
+  CardColumns,
+  InputGroupAddon,
 } from 'reactstrap';
 import Spinner from 'react-spinkit';
 import Result from './components/Result';
@@ -36,13 +38,18 @@ class App extends Component {
     super();
 
     this.state = {
-      results: [],
+      Search: [],
+      totalResults: 0,
+      Response: 'Loading',
+      page: 1,
       s: '',
     };
 
     this.getSearchResults = this.getSearchResults.bind(this);
     this.submitSearch = this.submitSearch.bind(this);
     this.inputChanged = this.inputChanged.bind(this);
+    this.renderResults = this.renderResults.bind(this);
+    this.showMore = this.showMore.bind(this);
   }
 
   componentDidMount() {
@@ -63,29 +70,56 @@ class App extends Component {
     this.submitSearch(s);
   }
 
+  showMore() {
+    const { Search, s, page } = this.state;
+    this.submitSearch(s, page + 1);
+    this.setState({ page: page + 1 });
+  }
+
   inputChanged({ target: { name, value }}) {
     this.setState({ [name]: value });
   }
 
-  async submitSearch(term) {
-    const results = await OMDB.search(term);
-    this.setState({ results: [{...results}] })
+  async submitSearch(term, page = 1) {
+    const result = await OMDB.search(term, page);
+
+    if (page <= 1) {
+      this.setState({ ...result })
+    } else {
+      const { Search } = this.state;
+      const results = { ...result };
+      results.Search = [...Search, ...results.Search];
+      this.setState({ ...results })
+    }
   }
 
-  renderResults(results) {
-    return results.map(result => <Result {...result}/>);
+  renderResults() {
+    const { Search, Response, totalResults, Error } = this.state;
+
+    if (Response === 'Loading') {
+      return <Loading/>
+    } else if (Response === 'False' && Error) {
+      return <Col>{Error}</Col>;
+    } else if (Response === 'True' && Search.length <= 0) {
+      return <Col>No Results Found</Col>
+    }
+
+    return Search.map(result => <Result {...{ ...result, Response, totalResults }} /> );
   }
 
   render() {
     const {
       state: {
-        results = [],
+        Search = [],
+        Response,
+        Error,
         s,
       },
       renderResults,
       searchChanged,
       getSearchResults,
       inputChanged,
+      showMore,
     } = this;
 
     return (
@@ -95,27 +129,23 @@ class App extends Component {
             <Navbar color="light" light expand="md">
               <NavbarBrand>OMDB Search</NavbarBrand>
               <Nav className="ml-auto" navbar>
-                <form onSubmit={getSearchResults}>
-                  <NavItem>
-                    <FormGroup>
-                      <Input type="search" name="s" value={s} onChange={inputChanged} placeholder="search title" />
-                    </FormGroup>
-                  </NavItem>
-                  <NavItem>
-                    <Button outline color="primary">Search</Button>
-                  </NavItem>
-                </form>
+                <NavItem>
+                  <form onSubmit={getSearchResults}>
+                    <Input type="search" name="s" value={s} onChange={inputChanged} placeholder="search title" />
+                    <InputGroupAddon addonType="append">
+                      <Button color="primary">Search!</Button>
+                    </InputGroupAddon>
+                  </form>
+                </NavItem>
               </Nav>
             </Navbar>
           </Col>
         </Row>
         <Container>
-          <Row className="text-center">
-            <Col className="flex-grow-1">Search Results</Col>
-          </Row>
-          <div>
-            {results.length > 0 ? renderResults(results): <Loading/>}
-          </div>
+          <CardColumns>
+            {renderResults()}
+          </CardColumns>
+          <Button block color="primary" onClick={showMore}>Show More</Button>
         </Container>
       </div>
     );
