@@ -4,13 +4,12 @@
   "private": true,
   "dependencies": {
     "bootstrap": "^4.1.2",
-    "eosjs": "^15.0.6",
     "moment": "^2.22.2",
+    "query-string": "^6.1.0",
     "react": "^16.4.1",
     "react-dom": "^16.4.1",
-    "react-json-view": "^1.19.0",
-    "react-markdown": "^3.3.4",
     "react-octicons": "^0.2.0",
+    "react-redux": "^5.0.7",
     "react-scripts": "1.1.4",
     "react-spinkit": "^3.0.0",
     "reactstrap": "^6.3.0"

@@ -1,11 +1,9 @@
 // Configuration
-export const KEY_PROVIDER = '5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3'
-export const CHAIN_ID = 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906'
+export const API_KEY = '9f572b90'
 
 // Variables
-export const BLOCK_PAGE_COUNT = 10;
+export const PAGE_COUNT = 10;
 
 // Endpoints
-export const EOS_ENDPOINT = 'https://api.eosnewyork.io'
-export const CHAIN_ENDPOINT = `${EOS_ENDPOINT}/v1/chain`
-export const GET_INFO_ENDPOINT = `${CHAIN_ENDPOINT}/get_info`
+export const OMDB_API = `http://www.omdbapi.com/?apikey=${API_KEY}`
+export const POSTER_API = `http://img.omdbapi.com/?apikey=${API_KEY}`
