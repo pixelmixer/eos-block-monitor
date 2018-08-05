@@ -29,6 +29,13 @@ export default class Result extends Component {
     this.toggle = this.toggle.bind(this);
   }
 
+  async componentDidMount() {
+    const { imdbID } = this.props;
+    const poster = await OMDB.getPoster(imdbID);
+
+    this.setState({ poster });
+  }
+
   async toggle() {
     const { imdbID } = this.props;
 
@@ -53,6 +60,7 @@ export default class Result extends Component {
         totalResults = 0,
       },
       state: {
+        poster,
         modal,
         details: {
           Plot = '',
@@ -70,8 +78,8 @@ export default class Result extends Component {
           Response === 'False' ?
             <Col className="flex-grow-1">{Error}</Col>
             :
-            <Card inverse onClick={toggle} style={{cursor: 'pointer'}}>
-              <CardImg width="100%" src={Poster !== 'N/A' ? Poster : PLACEHOLDER_IMAGE} alt={Title} />
+            <Card inverse onClick={toggle} style={{ cursor: 'pointer' }}>
+              <CardImg width="100%" src={poster || (Poster !== 'N/A' ? Poster : PLACEHOLDER_IMAGE)} alt={Title} />
               <CardImgOverlay>
                 <CardTitle>{Title}</CardTitle>
                 <CardText>

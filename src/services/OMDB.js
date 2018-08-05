@@ -10,4 +10,16 @@ export default class OMDB {
     const result = await fetch(`${OMDB_API}&plot=summary&i=${imdbID}`);
     return result.json();
   }
+
+  static async getPoster(imdbID) {
+    try {
+      const result = await fetch(`${POSTER_API}&i=${imdbID}`);
+      if (!result.ok) {
+        throw new Error(result.statusText);
+      }
+      return result.url;
+    } catch (e) {
+      return false;
+    }
+  }
 }

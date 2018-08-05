@@ -19,6 +19,8 @@ import {
   FormGroup,
   CardColumns,
   InputGroupAddon,
+  Form,
+  Label,
 } from 'reactstrap';
 import Spinner from 'react-spinkit';
 import Result from './components/Result';
@@ -40,7 +42,7 @@ class App extends Component {
     this.state = {
       Search: [],
       totalResults: 0,
-      Response: 'Loading',
+      Response: null,
       page: 1,
       s: '',
     };
@@ -81,7 +83,14 @@ class App extends Component {
   }
 
   async submitSearch(term, page = 1) {
-    const result = await OMDB.search(term, page);
+    this.setState({ Response: 'Loading' });
+    const termkey = `${term}-${page}`;
+    const savedResult = JSON.parse(localStorage.getItem(termkey));
+    const result = savedResult || await OMDB.search(term, page);
+
+    if (!savedResult) {
+      localStorage.setItem(termkey, JSON.stringify(result));
+    }
 
     if (page <= 1) {
       this.setState({ ...result })
@@ -96,9 +105,7 @@ class App extends Component {
   renderResults() {
     const { Search, Response, totalResults, Error } = this.state;
 
-    if (Response === 'Loading') {
-      return <Loading/>
-    } else if (Response === 'False' && Error) {
+    if (Response === 'False' && Error) {
       return <Col>{Error}</Col>;
     } else if (Response === 'True' && Search.length <= 0) {
       return <Col>No Results Found</Col>
@@ -113,6 +120,8 @@ class App extends Component {
         Search = [],
         Response,
         Error,
+        page,
+        totalResults,
         s,
       },
       renderResults,
@@ -128,25 +137,36 @@ class App extends Component {
           <Col xs="12">
             <Navbar color="light" light expand="md">
               <NavbarBrand>OMDB Search</NavbarBrand>
-              <Nav className="ml-auto" navbar>
-                <NavItem>
-                  <form onSubmit={getSearchResults}>
-                    <Input type="search" name="s" value={s} onChange={inputChanged} placeholder="search title" />
-                    <InputGroupAddon addonType="append">
-                      <Button color="primary">Search!</Button>
-                    </InputGroupAddon>
-                  </form>
-                </NavItem>
-              </Nav>
             </Navbar>
           </Col>
         </Row>
-        <Container>
-          <CardColumns>
-            {renderResults()}
-          </CardColumns>
-          <Button block color="primary" onClick={showMore}>Show More</Button>
-        </Container>
+        <Row className="mb-4">
+          <Col sm="12" md={{ size: 8, offset: 2 }} >
+            <Card>
+              <CardBody>
+                <Form onSubmit={getSearchResults}>
+                  <Label for="search">Find a Show</Label>
+                  <Input type="search" id="search" name="s" value={s} onChange={inputChanged} placeholder="search title" />
+                  <Button color="primary">Search</Button>
+                </Form>
+              </CardBody>
+            </Card>
+          </Col>
+        </Row>
+        {Response !== null &&
+          <Row>
+            <Col sm="12" md={{ size: 8, offset: 2 }}>
+              <Card>
+                <CardBody>
+                  {Response === 'Loading' ? <Loading /> : ''}
+                  <CardColumns>
+                    {renderResults()}
+                  </CardColumns>
+                  {page * 10 < totalResults ? <Button block color="primary" onClick={showMore}>Show More</Button> : ''}
+                </CardBody>
+              </Card>
+            </Col>
+          </Row>}
       </div>
     );
   }
