@@ -45,7 +45,7 @@ class App extends Component {
     window.addEventListener('popstate', this.stateUpdated);
   }
 
-  // Update the app if page state changes.
+  // Update the app if page state changes. This allows the app to trigger a search when the query string exists in the url and enables things like back button functionality.
   stateUpdated() {
     const { s } = queryString.parse(document.location.search);
     this.setState({ ...defaultState });
@@ -60,7 +60,7 @@ class App extends Component {
     this.stateUpdated()
   }
 
-  // Button event nested in SearchForm component to perform the search.
+  // Button event nested in SearchForm component to perform the search. This also adds the search term to a query string in the location bar and enables back and forward browser capabilities with pushState.
   getSearchResults(event) {
     const { s } = this.state;
     const targetUrl = new URL(window.location.href);
