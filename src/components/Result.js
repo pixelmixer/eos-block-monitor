@@ -3,18 +3,14 @@ import {
   Card,
   Row,
   Col,
-  CardHeader,
   CardImgOverlay,
   CardImg,
-  CardTitle,
-  CardText,
   Modal,
   ModalBody,
-  ModalFooter,
   ModalHeader,
-  Button,
 } from 'reactstrap'
-import { IMDB_PATH, PLACEHOLDER_IMAGE } from '../constants/constants'
+import { PLACEHOLDER_IMAGE } from '../constants/constants'
+import { decorateActorNames } from '../helpers/helpers'
 import OMDB from '../services/OMDB';
 
 export default class Result extends Component {
@@ -22,27 +18,24 @@ export default class Result extends Component {
     super(props);
 
     this.state = {
-      modal: false,
+      showDetails: false,
       details: {}
     }
 
-    this.toggle = this.toggle.bind(this);
+    this.openDetails = this.openDetails.bind(this);
   }
 
-  async componentDidMount() {
-    const { imdbID } = this.props;
-    const poster = await OMDB.getPoster(imdbID);
-
-    this.setState({ poster });
-  }
-
-  async toggle() {
-    const { imdbID } = this.props;
+  // Get the movie/show details.
+  async openDetails() {
+    const {
+      props: { imdbID },
+      state: { showDetails }
+    } = this;
 
     const details = await OMDB.getDetails(imdbID);
 
     this.setState({
-      modal: !this.state.modal,
+      showDetails: !showDetails,
       details
     });
   }
@@ -52,16 +45,12 @@ export default class Result extends Component {
       props: {
         Poster = '',
         Title = '',
-        Type = '',
         Year = '',
-        imdbID = '',
         Response = '',
         Error,
-        totalResults = 0,
       },
       state: {
-        poster,
-        modal,
+        showDetails,
         details: {
           Plot = '',
           Actors = '',
@@ -69,45 +58,42 @@ export default class Result extends Component {
           Runtime = '',
         } = {}
       },
-      toggle,
+      openDetails,
     } = this;
 
     return <Row className="pb-2">
       <Col xs="12">
-        {
-          Response === 'False' ?
-            <Col className="flex-grow-1">{Error}</Col>
-            :
-            <Card inverse onClick={toggle} style={{ cursor: 'pointer' }}>
-              <CardImg width="100%" src={poster || (Poster !== 'N/A' ? Poster : PLACEHOLDER_IMAGE)} alt={Title} />
-              <CardImgOverlay>
-                <CardTitle>{Title}</CardTitle>
-                <CardText>
-                  <Row><Col className="flex-grow-1">Year: {Year}</Col></Row>
-                </CardText>
-              </CardImgOverlay>
-            </Card>
-        }
+      {
+        Response === 'False' ?
+        <Col>{Error}</Col>
+        :
+        <Card inverse onClick={openDetails} className="Avoxi--moviecard">
+          <CardImg width="100%" style={{'objectFit': 'contain'}} src={Poster !== 'N/A' ? Poster : PLACEHOLDER_IMAGE} alt={Title} />
+          <CardImgOverlay className="Avoxi--moviecard__overlay">
+          <div>
+            <Row><Col>{Title}</Col></Row>
+            <Row><Col>{Year}</Col></Row>
+          </div>
+          </CardImgOverlay>
+        </Card>
+      }
       </Col>
-      <Modal isOpen={modal} toggle={toggle}>
-        <ModalHeader toggle={toggle}>{Title}</ModalHeader>
+      <Modal isOpen={showDetails} toggle={openDetails} size={"lg"} centered={true}>
+        <ModalHeader toggle={openDetails}>{Title}</ModalHeader>
         <ModalBody>
           <Row>
             <Col><strong>Released</strong>: {Released}</Col>
             <Col className="text-right"><strong>Runtime</strong>: {Runtime}</Col>
           </Row>
           <hr/>
-          <Row>
-            <Col><strong>Actors</strong>:<br/>{Actors}</Col>
-          </Row>
+          {Actors && Actors.length ? <Row>
+            <Col><strong>Actors</strong>:<br /> {decorateActorNames(Actors)}</Col>
+          </Row> : ''}
           <hr/>
           <Row>
             <Col><p>{Plot}</p></Col>
           </Row>
         </ModalBody>
-        <ModalFooter>
-          <Button color="secondary" onClick={toggle}>Ok</Button>
-        </ModalFooter>
       </Modal>
     </Row>
   }

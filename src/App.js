@@ -10,98 +10,101 @@ import {
   Card,
   CardBody,
   Button,
-  Row,
-  Navbar,
-  NavbarBrand,
-  Nav,
-  NavItem,
-  Input,
-  FormGroup,
   CardColumns,
-  InputGroupAddon,
-  Form,
-  Label,
 } from 'reactstrap';
 import Spinner from 'react-spinkit';
 import Result from './components/Result';
+import SearchForm from './components/SearchForm';
 
-const Loading = () => <Col xs="12">
-<Card>
-  <CardBody>
-    <div className="d-flex justify-content-center">
-      <Spinner name="three-bounce"></Spinner>
-    </div>
-  </CardBody>
-</Card>
-</Col>
+const defaultState = {
+  Search: [],
+  totalResults: 0,
+  Response: null,
+  page: 1,
+  s: '',
+}
+
+const Loading = () =>
+  <span className="d-flex justify-content-center">
+    <Spinner name="three-bounce"></Spinner>
+  </span>
 
 class App extends Component {
   constructor() {
     super();
 
-    this.state = {
-      Search: [],
-      totalResults: 0,
-      Response: null,
-      page: 1,
-      s: '',
-    };
+    this.state = defaultState;
 
     this.getSearchResults = this.getSearchResults.bind(this);
     this.submitSearch = this.submitSearch.bind(this);
     this.inputChanged = this.inputChanged.bind(this);
     this.renderResults = this.renderResults.bind(this);
     this.showMore = this.showMore.bind(this);
+    this.stateUpdated = this.stateUpdated.bind(this);
+
+    window.addEventListener('popstate', this.stateUpdated);
   }
 
-  componentDidMount() {
+  // Update the app if page state changes.
+  stateUpdated() {
     const { s } = queryString.parse(document.location.search);
+    this.setState({ ...defaultState });
     if (s) {
       this.setState({ s });
       this.submitSearch(s)
     }
   }
 
+  componentDidMount() {
+    // When the component is mounted trigger the state update. We can gather the query string here.
+    this.stateUpdated()
+  }
+
+  // Button event nested in SearchForm component to perform the search.
   getSearchResults(event) {
     const { s } = this.state;
-    document.history.pushState({
-      search: `?s=${s}`
-    })
+    const targetUrl = new URL(window.location.href);
+    targetUrl.search = `?s=${s}`;
+    window.history.pushState({ path: targetUrl.href }, '', targetUrl.href);
 
     event.preventDefault();
     this.submitSearch(s);
   }
 
+  // Increments the page number and resubmits the search.
   showMore() {
-    const { Search, s, page } = this.state;
+    const { s, page } = this.state;
     this.submitSearch(s, page + 1);
-    this.setState({ page: page + 1 });
   }
 
+  // Let's just keep track of the search field state.
+  // We could live without this, but it could be useful later for validation or autocomplete if needed.
   inputChanged({ target: { name, value }}) {
     this.setState({ [name]: value });
   }
 
-  async submitSearch(term, page = 1) {
-    this.setState({ Response: 'Loading' });
-    const termkey = `${term}-${page}`;
-    const savedResult = JSON.parse(localStorage.getItem(termkey));
-    const result = savedResult || await OMDB.search(term, page);
+  // Run the search with term and page and tell the app that we're now searching.
+  async submitSearch(s, page = 1) {
+    this.setState({ s, Response: 'Loading' });
+    const result = await OMDB.search(s, page);
 
-    if (!savedResult) {
-      localStorage.setItem(termkey, JSON.stringify(result));
+    if( result.Response === 'False' && result.Error ) {
+      this.setState({ ...defaultState, s, ...result });
     }
 
+    // If we're not paging then just set the state to the current result.
+    // If we are paging then let's append the current and previous search results.
     if (page <= 1) {
-      this.setState({ ...result })
+      return this.setState({ ...result })
     } else {
       const { Search } = this.state;
       const results = { ...result };
       results.Search = [...Search, ...results.Search];
-      this.setState({ ...results })
+      return this.setState({ ...results, page })
     }
   }
 
+  // Render the search results or Error messages.
   renderResults() {
     const { Search, Response, totalResults, Error } = this.state;
 
@@ -111,63 +114,44 @@ class App extends Component {
       return <Col>No Results Found</Col>
     }
 
-    return Search.map(result => <Result {...{ ...result, Response, totalResults }} /> );
+    // Throw the results in a CardColumns wrapper because it has an interesting tiled layout.
+    return <CardColumns>{Search.map(result => <Result key={result.imdbID} {...{ ...result, Response, totalResults }} />)}</CardColumns>;
   }
 
   render() {
     const {
       state: {
-        Search = [],
         Response,
-        Error,
         page,
-        totalResults,
+        totalResults = 0,
         s,
       },
       renderResults,
-      searchChanged,
       getSearchResults,
       inputChanged,
       showMore,
     } = this;
 
     return (
-      <div className="App">
-        <Row className="mb-4">
-          <Col xs="12">
-            <Navbar color="light" light expand="md">
-              <NavbarBrand>OMDB Search</NavbarBrand>
-            </Navbar>
-          </Col>
-        </Row>
-        <Row className="mb-4">
-          <Col sm="12" md={{ size: 8, offset: 2 }} >
-            <Card>
-              <CardBody>
-                <Form onSubmit={getSearchResults}>
-                  <Label for="search">Find a Show</Label>
-                  <Input type="search" id="search" name="s" value={s} onChange={inputChanged} placeholder="search title" />
-                  <Button color="primary">Search</Button>
-                </Form>
-              </CardBody>
-            </Card>
-          </Col>
-        </Row>
-        {Response !== null &&
-          <Row>
-            <Col sm="12" md={{ size: 8, offset: 2 }}>
+      <div className="Avoxi">
+        <Container className={`pt-4 pl-1 pr-1 d-flex justify-content-center flex-column ${!Response ? 'h-v100' : ''}`}>
+          <div className={`mb-2 w-100 Avoxi--sticky-search ${!Response ? 'h-v75' : ''}`}>
+            <div>
+              <h4 className="text-light font-weight-light pl-2">OMDB Search</h4>
+              <SearchForm {...{s, inputChanged, getSearchResults}}/>
+            </div>
+          </div>
+          {Response !== null &&
+            <div className="w-100">
               <Card>
                 <CardBody>
-                  {Response === 'Loading' ? <Loading /> : ''}
-                  <CardColumns>
-                    {renderResults()}
-                  </CardColumns>
-                  {page * 10 < totalResults ? <Button block color="primary" onClick={showMore}>Show More</Button> : ''}
+                  {Response === 'Loading' ? <Loading /> : renderResults()}
+                  {(page * 10 < totalResults && Response !== 'False' && Response !== 'Loading') ? <Button block color="primary" onClick={showMore}>Show More</Button> : ''}
                 </CardBody>
               </Card>
-            </Col>
-          </Row>}
-      </div>
+            </div>}
+          </Container>
+        </div>
     );
   }
 }
