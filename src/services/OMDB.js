@@ -22,6 +22,7 @@ export default class OMDB {
     }
   }
 
+  // This is used when the poster image is clicked or tapped, it loads the movie/tv show details.
   static async getDetails(imdbID) {
     const savedResult = JSON.parse(localStorage.getItem(imdbID));
     const result = savedResult || (await fetch(`${OMDB_API}&plot=summary&i=${imdbID}`)).json();
@@ -32,6 +33,9 @@ export default class OMDB {
     return result;
   }
 
+  // This is intended to load the poster image and validate the poster embed URL.
+  // However this ended up not being unnecessary because a poster is provided via search.
+  // Left here for the sake of documentation.
   static async getPoster(imdbID) {
     try {
       const result = await fetch(`${POSTER_API}&i=${imdbID}`);
