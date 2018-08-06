@@ -8,5 +8,5 @@ export const PLACEHOLDER_IMAGE = `https://m.media-amazon.com/images/G/01/imdb/im
 export const IMDB_ACTOR_SEARCH = `https://www.imdb.com/search/name?name=`
 
 // Endpoints
-export const OMDB_API = `http://www.omdbapi.com/?apikey=${API_KEY}`
-export const POSTER_API = `http://img.omdbapi.com/?apikey=${API_KEY}`
+export const OMDB_API = `https://www.omdbapi.com/?apikey=${API_KEY}`
+export const POSTER_API = `https://img.omdbapi.com/?apikey=${API_KEY}`
